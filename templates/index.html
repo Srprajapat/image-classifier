@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Image classifier</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            box-sizing: border-box;
+            font-family: "Poppins", sans-serif;
+        }
+
+        body {
+            background-image: linear-gradient(to right, rgb(126, 41, 179), rgb(95, 15, 223), rgb(26, 48, 173));
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        label {
+            display: block;
+            position: relative;
+            background-color: #025bee;
+            color: #ffffff;
+            font-size: 1.1em;
+            text-align: center;
+            width: 16em;
+            padding: 1em 0;
+            border-radius: 0.3em;
+            margin: 0 auto 1em auto;
+            cursor: pointer;
+        }
+
+        #image-display {
+            position: relative;
+            width: 90%;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-evenly;
+            gap: 1.25em;
+            flex-wrap: wrap;
+        }
+
+        #image-display figure {
+            width: 45%;
+        }
+
+        #image-display img {
+            width: 100%;
+        }
+
+        #image-display figcaption {
+            font-size: 0.8em;
+            text-align: center;
+            color: #5a5861;
+        }
+
+        .active {
+            border: 0.2em dashed #025bee;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.493);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 10px;
+            border-radius: 5px;
+            backdrop-filter: blur(5px);
+            box-shadow: 0px 0px 50px 5px black;
+        }
+
+        .container h2 {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .container button {
+            display: block;  /* Ensures it takes full width when needed */
+            margin: 0 auto;  /* Centers it horizontally */
+            padding: 8px 15px;
+            border-radius: 20px;
+            background-color: rgba(12, 88, 64, 0.493);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .container button:hover {
+            background-color: rgba(72, 237, 182, 0.493);
+            cursor: pointer;
+            box-shadow: 0px 0px 25px 5px white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Image classifier</h2>
+        <br>
+        <form action="/predict" method="post" enctype="multipart/form-data">
+            <input type="file" id="upload-button" name="image-pred" />
+            <label for="upload-button" id="btn"><i class="fa-solid fa-upload"></i>&nbsp; Choose Or Drop Photos
+            </label>
+            <div id="error"></div>
+            <div id="image-display"></div>
+            <button type="submit">Predict</button>
+        </form>
+        <br>
+        {% if image_pred %}
+        <div id="image-display">
+            <figure>
+                <img src="{{ url_for('static', filename='uploads/' + image_pred) }}" alt="">
+            </figure>
+        </div>
+        {% endif %}
+
+        <br>
+        {% if prediction_text %}
+        <h3>{{ prediction_text }}</h3>
+        {% endif %}
+    </div>
+    <!-- Script -->
+    <script>let uploadButton = document.getElementById("upload-button");
+        let container = document.querySelector(".container");
+        let error = document.getElementById("error");
+        let imageDisplay = document.getElementById("image-display");
+        function removebtn() {
+            document.getElementById("btn").style.display = "none";
+
+        }
+        const fileHandler = (file, name, type) => {
+            if (type.split("/")[0] !== "image") {
+                //File Type Error
+                error.innerText = "Please upload an image file";
+                return false;
+            }
+            error.innerText = "";
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = () => {
+                //image and file name
+                let imageContainer = document.createElement("figure");
+                let img = document.createElement("img");
+                img.src = reader.result;
+                imageContainer.appendChild(img);
+                imageContainer.innerHTML += `<figcaption>${name}</figcaption>`;
+                imageDisplay.appendChild(imageContainer);
+            };
+        };
+
+        //Upload Button
+        uploadButton.addEventListener("change", () => {
+            imageDisplay.innerHTML = "";
+            Array.from(uploadButton.files).forEach((file) => {
+                fileHandler(file, file.name, file.type);
+            });
+            document.getElementById("btn").style.display = "none";
+        });
+
+        container.addEventListener(
+            "dragenter",
+            (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                container.classList.add("active");
+            },
+            false
+        );
+
+        container.addEventListener(
+            "dragleave",
+            (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                container.classList.remove("active");
+            },
+            false
+        );
+
+        container.addEventListener(
+            "dragover",
+            (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                container.classList.add("active");
+            },
+            false
+        );
+
+        container.addEventListener("drop", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            container.classList.remove("active");
+
+            let draggedData = e.dataTransfer;
+            let files = draggedData.files;
+
+            let fileInput = document.getElementById("upload-button");
+            let dataTransfer = new DataTransfer(); // Create a new DataTransfer object
+
+            imageDisplay.innerHTML = ""; // Clear previous images
+
+            Array.from(files).forEach((file) => {
+                fileHandler(file, file.name, file.type);
+                dataTransfer.items.add(file); // Add file to DataTransfer object
+            });
+
+            fileInput.files = dataTransfer.files; // Assign files to input field
+            document.getElementById("btn").style.display = "none"; // Hide upload button
+        }, false);
+
+        window.onload = () => {
+            error.innerText = "";
+        };</script>
+</body>
+
+</html>

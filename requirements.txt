@@ -4,4 +4,4 @@ tensorflow
 Flask
 opencv-python
 Pillow
-guvicorn
+gunicorn

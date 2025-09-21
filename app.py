@@ -48,4 +48,4 @@ def predict():
     return render_template('index.html', image_pred=file.filename, prediction_text=f"Prediction: {prediction}")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()

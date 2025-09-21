@@ -1,0 +1,7 @@
+pandas
+numpy
+tensorflow
+Flask
+opencv-python
+Pillow
+guvicorn
